@@ -195,6 +195,34 @@ export default function Navbar() {
             >
               How It Works
             </Link>
+            {/* Mobile theme picker */}
+            <div className="pt-3 border-t border-border">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Theme</p>
+              <div className="grid grid-cols-5 gap-2">
+                {THEMES.map((theme) => (
+                  <button
+                    key={theme.id}
+                    onClick={() => { setTheme(theme.id); setCurrentTheme(theme.id); }}
+                    className="flex flex-col items-center gap-1"
+                    title={theme.label}
+                  >
+                    <span
+                      className="w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all"
+                      style={{
+                        background: `linear-gradient(135deg, ${theme.bg} 50%, ${theme.accent} 50%)`,
+                        borderColor: currentTheme === theme.id ? theme.accent : "transparent",
+                      }}
+                    >
+                      {currentTheme === theme.id && (
+                        <Check className="w-3 h-3 text-white drop-shadow" strokeWidth={3} />
+                      )}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{theme.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="pt-3 border-t border-border space-y-2">
               {user ? (
                 <Link href="/dashboard" className="block">
