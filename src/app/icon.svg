@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c6cf5"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#g)"/>
+  <!-- Sparkles: main diamond star -->
+  <path d="M14 7 L15.1 11.9 A1.2 1.2 0 0 0 16 12.8 L20.9 14 L16 15.2 A1.2 1.2 0 0 0 15.1 16.1 L14 21 L12.9 16.1 A1.2 1.2 0 0 0 12 15.2 L7.1 14 L12 12.8 A1.2 1.2 0 0 0 12.9 11.9 Z" fill="white"/>
+  <!-- Small sparkle top right -->
+  <path d="M22.5 6 L23.1 8.4 A0.6 0.6 0 0 0 23.6 8.9 L26 9.5 L23.6 10.1 A0.6 0.6 0 0 0 23.1 10.6 L22.5 13 L21.9 10.6 A0.6 0.6 0 0 0 21.4 10.1 L19 9.5 L21.4 8.9 A0.6 0.6 0 0 0 21.9 8.4 Z" fill="white" opacity="0.9"/>
+  <!-- Tiny sparkle bottom right -->
+  <path d="M23 19 L23.4 20.6 A0.4 0.4 0 0 0 23.7 20.9 L25.3 21.3 L23.7 21.7 A0.4 0.4 0 0 0 23.4 22 L23 23.6 L22.6 22 A0.4 0.4 0 0 0 22.3 21.7 L20.7 21.3 L22.3 20.9 A0.4 0.4 0 0 0 22.6 20.6 Z" fill="white" opacity="0.75"/>
+</svg>
