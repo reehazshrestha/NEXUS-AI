@@ -60,8 +60,8 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "")}/dashboard?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "")}/pricing?canceled=true`,
       metadata: {
         supabase_user_id: user.id,
         plan,
