@@ -74,6 +74,12 @@ export default function PricingCards() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: planName.toLowerCase() }),
       });
+
+      if (res.status === 401) {
+        router.push(`/login?next=/pricing`);
+        return;
+      }
+
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
