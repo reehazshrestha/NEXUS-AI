@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,14 +8,11 @@ import {
   Plus,
   MessageSquare,
   Settings,
-  LogOut,
   Trash2,
   Sparkles,
   ChevronLeft,
 } from "lucide-react";
 import { useChatStore, Chat } from "@/lib/store";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
@@ -25,11 +22,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
-  const router = useRouter();
-  const supabase = createClient();
   const {
     chats,
-    setChats,
+    chatMessages,
     currentChatId,
     setCurrentChatId,
     setMessages,
@@ -38,97 +33,27 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   } = useChatStore();
   const [hoveredChat, setHoveredChat] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadChats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadChats = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data } = await supabase
-        .from("chats")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (data) {
-        setChats(data);
-      }
-    } catch (error) {
-      console.error("Error loading chats:", error);
-    }
-  };
-
-  const handleNewChat = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("chats")
-        .insert([
-          {
-            user_id: user.id,
-            title: "New Chat",
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        addChat(data);
-        setCurrentChatId(data.id);
-        setMessages([]);
-      }
-    } catch (error) {
-      console.error("Error creating chat:", error);
-      toast.error("Failed to create new chat");
-    }
-  };
-
-  const handleSelectChat = async (chat: Chat) => {
+  const handleNewChat = () => {
+    const chat: Chat = {
+      id: crypto.randomUUID(),
+      user_id: "local",
+      title: "New Chat",
+      created_at: new Date().toISOString(),
+    };
+    addChat(chat);
     setCurrentChatId(chat.id);
-    try {
-      const { data } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("chat_id", chat.id)
-        .order("created_at", { ascending: true });
-
-      if (data) {
-        setMessages(data);
-      }
-    } catch (error) {
-      console.error("Error loading messages:", error);
-    }
+    setMessages([]);
   };
 
-  const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
+  const handleSelectChat = (chat: Chat) => {
+    setCurrentChatId(chat.id);
+    setMessages(chatMessages[chat.id] ?? []);
+  };
+
+  const handleDeleteChat = (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      await supabase.from("messages").delete().eq("chat_id", chatId);
-      await supabase.from("chats").delete().eq("id", chatId);
-      deleteChat(chatId);
-      toast.success("Chat deleted");
-    } catch (error) {
-      console.error("Error deleting chat:", error);
-      toast.error("Failed to delete chat");
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    deleteChat(chatId);
+    toast.success("Chat deleted");
   };
 
   return (
@@ -232,14 +157,6 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
               Settings
             </Button>
           </Link>
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="w-full justify-start gap-3 text-sm text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive"
-          >
-            <LogOut className="w-4 h-4" />
-            Log Out
-          </Button>
         </div>
       </motion.aside>
     </>

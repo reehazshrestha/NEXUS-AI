@@ -6,17 +6,14 @@ import { Sparkles, Menu } from "lucide-react";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import { useChatStore, Message } from "@/lib/store";
-import { createClient } from "@/lib/supabase/client";
-import toast from "react-hot-toast";
 
 interface ChatAreaProps {
   onToggleSidebar: () => void;
 }
 
 export default function ChatArea({ onToggleSidebar }: ChatAreaProps) {
-  const supabase = createClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const abortRef = useRef(false);
   const {
     currentChatId,
     messages,
@@ -46,182 +43,60 @@ export default function ChatArea({ onToggleSidebar }: ChatAreaProps) {
     async (content: string) => {
       let chatId = currentChatId;
 
-      // Create new chat if none exists
       if (!chatId) {
-        try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (!user) {
-            toast.error("Please log in to send messages");
-            return;
-          }
-
-          const { data: newChat, error } = await supabase
-            .from("chats")
-            .insert([
-              {
-                user_id: user.id,
-                title:
-                  content.slice(0, 50) + (content.length > 50 ? "..." : ""),
-              },
-            ])
-            .select()
-            .single();
-
-          if (error) throw error;
-          chatId = newChat.id;
-          addChat(newChat);
-          setCurrentChatId(chatId);
-        } catch (error) {
-          const e = error as { message?: string; code?: string; details?: string; hint?: string };
-          console.error("Error creating chat:", e.message, e.code, e.details, e.hint, error);
-          toast.error(e.message || "Failed to create chat");
-          return;
-        }
+        chatId = crypto.randomUUID();
+        addChat({
+          id: chatId,
+          user_id: "local",
+          title: content.slice(0, 50) + (content.length > 50 ? "..." : ""),
+          created_at: new Date().toISOString(),
+        });
+        setCurrentChatId(chatId);
       }
 
-      // Add user message
-      const userMessage: Message = {
+      addMessage({
         id: crypto.randomUUID(),
-        chat_id: chatId!,
+        chat_id: chatId,
         role: "user",
         content,
         created_at: new Date().toISOString(),
-      };
-
-      addMessage(userMessage);
+      });
       setIsLoading(true);
+      abortRef.current = false;
 
-      // Save user message to DB
-      try {
-        await supabase.from("messages").insert([
-          {
-            chat_id: chatId,
-            role: "user",
-            content,
-          },
-        ]);
-      } catch (error) {
-        console.error("Error saving message:", error);
+      // Placeholder reply, no backend connected
+      const reply = `This is a demo response. No AI backend is connected.\n\nYou said: "${content}"`;
+      await new Promise((r) => setTimeout(r, 600));
+
+      setIsStreaming(true);
+      setStreamingContent("");
+      setIsLoading(false);
+
+      let shown = "";
+      for (const word of reply.split(/(?<=\s)/)) {
+        if (abortRef.current) break;
+        shown += word;
+        appendStreamingContent(word);
+        await new Promise((r) => setTimeout(r, 30));
       }
 
-      // Send to API
-      try {
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
-
-        // Gather conversation context
-        const conversationMessages = [
-          ...messages.map((m) => ({ role: m.role, content: m.content })),
-          { role: "user" as const, content },
-        ];
-
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: conversationMessages,
-            chatId,
-          }),
-          signal: abortController.signal,
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to send message");
-        }
-
-        setIsStreaming(true);
-        setStreamingContent("");
-        setIsLoading(false);
-
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
-        let fullContent = "";
-
-        if (reader) {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split("\n");
-
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const data = line.slice(6);
-                if (data === "[DONE]") continue;
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.choices?.[0]?.delta?.content || "";
-                  if (content) {
-                    fullContent += content;
-                    appendStreamingContent(content);
-                  }
-                } catch {
-                  // Skip invalid JSON
-                }
-              }
-            }
-          }
-        }
-
-        // Add completed assistant message
-        const assistantMessage: Message = {
+      if (shown) {
+        addMessage({
           id: crypto.randomUUID(),
-          chat_id: chatId!,
+          chat_id: chatId,
           role: "assistant",
-          content: fullContent,
+          content: shown,
           created_at: new Date().toISOString(),
-        };
-
-        addMessage(assistantMessage);
-        resetStreaming();
-
-        // Save assistant message to DB
-        await supabase.from("messages").insert([
-          {
-            chat_id: chatId,
-            role: "assistant",
-            content: fullContent,
-          },
-        ]);
-
-        // Update chat title if it was a new chat
-        if (messages.length === 0) {
-          const title =
-            content.slice(0, 50) + (content.length > 50 ? "..." : "");
-          await supabase.from("chats").update({ title }).eq("id", chatId);
-        }
-      } catch (error) {
-        if ((error as Error).name === "AbortError") {
-          // User stopped the generation
-          if (streamingContent) {
-            const assistantMessage: Message = {
-              id: crypto.randomUUID(),
-              chat_id: chatId!,
-              role: "assistant",
-              content: streamingContent,
-              created_at: new Date().toISOString(),
-            };
-            addMessage(assistantMessage);
-          }
-          resetStreaming();
-        } else {
-          console.error("Chat error:", error);
-          toast.error((error as Error).message || "Failed to get AI response");
-          setIsLoading(false);
-          resetStreaming();
-        }
+        });
       }
+      resetStreaming();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentChatId, messages],
   );
 
   const handleStop = () => {
-    abortControllerRef.current?.abort();
+    abortRef.current = true;
   };
 
   const handleRegenerate = async () => {

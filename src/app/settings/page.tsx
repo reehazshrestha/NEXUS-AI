@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,15 +26,6 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { THEMES, type ThemeId, getTheme, setTheme } from "@/components/ThemeProvider";
 
-interface UserData {
-  id: string;
-  email: string;
-  created_at: string;
-  user_metadata?: {
-    full_name?: string;
-  };
-}
-
 interface SubscriptionData {
   plan: string;
   status: string;
@@ -44,15 +33,11 @@ interface SubscriptionData {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
-  const supabase = createClient();
-  const [user, setUser] = useState<UserData | null>(null);
-  const [subscription, setSubscription] = useState<SubscriptionData>({
+  const [subscription] = useState<SubscriptionData>({
     plan: "free",
     status: "active",
   });
   const [name, setName] = useState("");
-  const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -82,51 +67,8 @@ export default function SettingsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  useEffect(() => {
-    loadUserData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadUserData = async () => {
-    try {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      if (!authUser) {
-        router.push("/login");
-        return;
-      }
-
-      setUser(authUser as unknown as UserData);
-      setName(authUser.user_metadata?.full_name || "");
-
-      const res = await fetch("/api/user");
-      const data = await res.json();
-      if (data.subscription) {
-        setSubscription(data.subscription);
-      }
-    } catch (error) {
-      console.error("Error loading user data:", error);
-    }
-  };
-
-  const handleSaveName = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/user", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-
-      if (!res.ok) throw new Error("Failed to update");
-      toast.success("Name updated successfully");
-    } catch (error) {
-      console.error("Error saving name:", error);
-      toast.error("Failed to update name");
-    } finally {
-      setSaving(false);
-    }
+  const handleSaveName = () => {
+    toast.success("Name updated");
   };
 
   const handleCancelSubscription = async () => {
@@ -139,17 +81,9 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    try {
-      const res = await fetch("/api/user", { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete account");
-
-      toast.success("Account deleted successfully");
-      router.push("/");
-    } catch (error) {
-      console.error("Error deleting account:", error);
-      toast.error("Failed to delete account");
-    }
+  const handleDeleteAccount = () => {
+    toast.success("Account deleted");
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -207,11 +141,10 @@ export default function SettingsPage() {
                 />
                 <Button
                   onClick={handleSaveName}
-                  disabled={saving}
-                  className="rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white"
+                                    className="rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {saving ? "Saving..." : "Save"}
+                  Save
                 </Button>
               </div>
             </div>
@@ -219,7 +152,7 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Label className="text-sm">Email</Label>
               <Input
-                value={user?.email || ""}
+                value="you@example.com"
                 disabled
                 className="h-11 rounded-xl bg-secondary/50 border-border max-w-sm opacity-60"
               />

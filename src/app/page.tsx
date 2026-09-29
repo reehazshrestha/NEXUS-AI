@@ -109,7 +109,7 @@ export default function HomePage() {
             transition={{ duration: 0.7, delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Link href="/register">
+            <Link href="/dashboard">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 text-white rounded-xl px-8 h-13 text-base shadow-xl shadow-primary/25 group"
@@ -432,7 +432,7 @@ export default function HomePage() {
             Join thousands of users already having smarter conversations with
             NexusAI.
           </p>
-          <Link href="/register">
+          <Link href="/dashboard">
             <Button
               size="lg"
               className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 text-white rounded-xl px-10 h-14 text-lg shadow-xl shadow-primary/25 group"

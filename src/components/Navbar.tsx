@@ -5,25 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Menu, X, Palette, Check } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
-import type { User } from "@supabase/supabase-js";
 import { THEMES, type ThemeId, getTheme, setTheme } from "@/components/ThemeProvider";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<ThemeId>("nebula");
   const themeRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     setCurrentTheme(getTheme());
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => subscription.unsubscribe();
   }, []);
 
   // Close dropdown when clicking outside
@@ -129,26 +120,11 @@ export default function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
-            {user ? (
-              <Link href="/dashboard">
+                          <Link href="/dashboard">
                 <Button className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 text-white text-sm shadow-lg shadow-primary/25">
                   Go to Dashboard
                 </Button>
               </Link>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" className="text-sm">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 text-white text-sm shadow-lg shadow-primary/25">
-                    Get Started Free
-                  </Button>
-                </Link>
-              </>
-            )}
           </div>
 
           {/* Mobile menu button */}
@@ -224,26 +200,11 @@ export default function Navbar() {
             </div>
 
             <div className="pt-3 border-t border-border space-y-2">
-              {user ? (
-                <Link href="/dashboard" className="block">
+                              <Link href="/dashboard" className="block">
                   <Button className="w-full bg-gradient-to-r from-primary to-purple-600 text-white text-sm">
                     Go to Dashboard
                   </Button>
                 </Link>
-              ) : (
-                <>
-                  <Link href="/login" className="block">
-                    <Button variant="ghost" className="w-full text-sm">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href="/register" className="block">
-                    <Button className="w-full bg-gradient-to-r from-primary to-purple-600 text-white text-sm">
-                      Get Started Free
-                    </Button>
-                  </Link>
-                </>
-              )}
             </div>
           </div>
         </motion.div>

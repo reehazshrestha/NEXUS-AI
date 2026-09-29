@@ -19,6 +19,7 @@ interface ChatState {
   chats: Chat[];
   currentChatId: string | null;
   messages: Message[];
+  chatMessages: Record<string, Message[]>;
   isLoading: boolean;
   isStreaming: boolean;
   streamingContent: string;
@@ -40,6 +41,7 @@ export const useChatStore = create<ChatState>((set) => ({
   chats: [],
   currentChatId: null,
   messages: [],
+  chatMessages: {},
   isLoading: false,
   isStreaming: false,
   streamingContent: "",
@@ -52,11 +54,26 @@ export const useChatStore = create<ChatState>((set) => ({
       currentChatId:
         state.currentChatId === chatId ? null : state.currentChatId,
       messages: state.currentChatId === chatId ? [] : state.messages,
+      chatMessages: Object.fromEntries(
+        Object.entries(state.chatMessages).filter(([id]) => id !== chatId),
+      ),
     })),
   setCurrentChatId: (id) => set({ currentChatId: id }),
-  setMessages: (messages) => set({ messages }),
+  setMessages: (messages) =>
+    set((state) => ({
+      messages,
+      chatMessages: state.currentChatId
+        ? { ...state.chatMessages, [state.currentChatId]: messages }
+        : state.chatMessages,
+    })),
   addMessage: (message) =>
-    set((state) => ({ messages: [...state.messages, message] })),
+    set((state) => {
+      const messages = [...state.messages, message];
+      return {
+        messages,
+        chatMessages: { ...state.chatMessages, [message.chat_id]: messages },
+      };
+    }),
   setIsLoading: (isLoading) => set({ isLoading }),
   setIsStreaming: (isStreaming) => set({ isStreaming }),
   setStreamingContent: (streamingContent) => set({ streamingContent }),

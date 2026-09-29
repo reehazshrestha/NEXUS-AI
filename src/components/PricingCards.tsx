@@ -62,31 +62,8 @@ const plans = [
 export default function PricingCards() {
   const router = useRouter();
 
-  const handleSubscribe = async (planName: string) => {
-    if (planName === "Free") {
-      router.push("/register");
-      return;
-    }
-    // Pro / Business - redirect to checkout
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planName.toLowerCase() }),
-      });
-
-      if (res.status === 401) {
-        router.push(`/login?next=/pricing`);
-        return;
-      }
-
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-    }
+  const handleSubscribe = () => {
+    router.push("/dashboard");
   };
 
   return (
@@ -150,7 +127,7 @@ export default function PricingCards() {
             </ul>
 
             <Button
-              onClick={() => handleSubscribe(plan.name)}
+              onClick={() => handleSubscribe()}
               className={`w-full ${
                 plan.popular
                   ? "bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 text-white shadow-lg shadow-primary/25"
