@@ -4,16 +4,29 @@ import { memo, useState } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Copy, Check, User, Sparkles, RotateCcw } from "lucide-react";
+import {
+  Copy,
+  Check,
+  User,
+  Sparkles,
+  RotateCcw,
+  ChevronDown,
+} from "lucide-react";
 import type { Message } from "@/lib/store";
 
 interface ChatMessageProps {
   message: Message;
   isStreaming?: boolean;
   onRegenerate?: () => void;
+  onFollowUp?: (query: string) => void;
 }
 
-function ChatMessage({ message, isStreaming, onRegenerate }: ChatMessageProps) {
+function ChatMessage({
+  message,
+  isStreaming,
+  onRegenerate,
+  onFollowUp,
+}: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === "user";
 
@@ -64,6 +77,17 @@ function ChatMessage({ message, isStreaming, onRegenerate }: ChatMessageProps) {
                 <div
                   className={`prose max-w-none ${isStreaming ? "typing-cursor" : ""}`}
                 >
+                  {message.reasoning && (
+                    <details className="not-prose mb-3 rounded-xl border border-border bg-secondary/30 px-3 py-2 text-sm text-muted-foreground">
+                      <summary className="flex cursor-pointer items-center gap-1.5 select-none">
+                        <ChevronDown className="w-3.5 h-3.5" />
+                        Reasoning
+                      </summary>
+                      <p className="mt-2 whitespace-pre-wrap">
+                        {message.reasoning}
+                      </p>
+                    </details>
+                  )}
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
@@ -133,6 +157,11 @@ function ChatMessage({ message, isStreaming, onRegenerate }: ChatMessageProps) {
                     </>
                   )}
                 </button>
+                {message.responseMs ? (
+                  <span className="px-2 text-xs text-muted-foreground">
+                    {(message.responseMs / 1000).toFixed(1)}s
+                  </span>
+                ) : null}
                 {onRegenerate && (
                   <button
                     onClick={onRegenerate}
@@ -144,6 +173,23 @@ function ChatMessage({ message, isStreaming, onRegenerate }: ChatMessageProps) {
                 )}
               </div>
             )}
+
+            {!isUser &&
+            !isStreaming &&
+            onFollowUp &&
+            message.followUps?.length ? (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {message.followUps.map((f) => (
+                  <button
+                    key={f.label}
+                    onClick={() => onFollowUp(f.query)}
+                    className="rounded-full border border-border bg-secondary/30 px-3 py-1.5 text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

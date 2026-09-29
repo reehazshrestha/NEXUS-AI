@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useChatStore, Chat } from "@/lib/store";
 import Link from "next/link";
+import { uid } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 interface SidebarProps {
@@ -35,7 +36,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
   const handleNewChat = () => {
     const chat: Chat = {
-      id: crypto.randomUUID(),
+      id: uid(),
       user_id: "local",
       title: "New Chat",
       created_at: new Date().toISOString(),
@@ -134,7 +135,10 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   </span>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: hoveredChat === chat.id ? 1 : 0, scale: hoveredChat === chat.id ? 1 : 0.8 }}
+                    animate={{
+                      opacity: hoveredChat === chat.id ? 1 : 0,
+                      scale: hoveredChat === chat.id ? 1 : 0.8,
+                    }}
                     onClick={(e) => handleDeleteChat(chat.id, e)}
                     className="flex-shrink-0 p-1 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
                   >
